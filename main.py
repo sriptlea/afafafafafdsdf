@@ -19,7 +19,7 @@ async def root():
     return {"message": "Hello World"}
 from fastapi import HTTPException
 
-from ro_py.errors import UserDoesNotExistError
+
 from fastapi import HTTPException
 
 @app.get("/group/promote/")
