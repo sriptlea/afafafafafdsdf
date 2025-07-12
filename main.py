@@ -24,34 +24,37 @@ from fastapi import HTTPException
 
 import traceback
 
-import traceback
+import aiohttp
+
+async def get_user_id(username: str):
+    async with aiohttp.ClientSession() as session:
+        url = "https://users.roblox.com/v1/usernames/users"
+        payload = {"usernames": [username], "excludeBannedUsers": False}
+        headers = {"Content-Type": "application/json"}
+
+        async with session.post(url, json=payload, headers=headers) as resp:
+            data = await resp.json()
+            if "data" in data and len(data["data"]) > 0:
+                return data["data"][0]["id"]
+            else:
+                raise Exception("Username not found from Roblox API.")
 
 @app.get("/group/promote/")
 async def promote_user(user_name: str, key: str, groupid: int):
     if key != APIKEY:
         return {"error": "Incorrect key"}
 
-    print(f"Promote request for user: '{user_name}', group: {groupid}")
-
     try:
-        usernameinsystem = await client.get_user_by_username(user_name)
-        if usernameinsystem is None:
-            return {"error": "User lookup failed: user not found"}
-    except Exception as e:
-        err_text = ''.join(traceback.format_exception_only(type(e), e)).strip()
-        print(f"Error looking up user: {repr(err_text)}")
-        return {"error": f"User lookup failed: {err_text}"}
+        user_id = await get_user_id(user_name)
+        print(f"Found user ID: {user_id}")
 
-    try:
         group = await client.get_group(groupid)
-        user_id = usernameinsystem.id
         membertorank = await group.get_member_by_id(user_id)
         await membertorank.promote()
-        return {"message": "The user was promoted!"}
+
+        return {"message": f"User '{user_name}' was promoted!"}
     except Exception as e:
-        err_text = ''.join(traceback.format_exception_only(type(e), e)).strip()
-        print(f"Promotion failed: {repr(err_text)}")
-        return {"error": f"Promotion failed: {err_text}"}
+        return {"error": f"Promotion failed: {str(e)}"}
 
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
