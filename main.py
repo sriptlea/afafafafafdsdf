@@ -25,26 +25,26 @@ from fastapi import HTTPException
 @app.get("/group/promote/")
 async def promote_user(user_name: str, key: str, groupid: int):
     if key != APIKEY:
-        raise HTTPException(status_code=401, detail="Incorrect key")
+        return {"error": "Incorrect key"}
 
     try:
         group = await client.get_group(groupid)
         try:
             usernameinsystem = await client.get_user_by_username(user_name)
-        except UserDoesNotExistError:
-            raise HTTPException(status_code=404, detail=f"User '{user_name}' does not exist.")
+        except Exception as e:
+            # Check if error message indicates user does not exist
+            if "UserDoesNotExist" in str(e) or "does not exist" in str(e).lower():
+                return {"error": f"User '{user_name}' does not exist."}
+            else:
+                raise e
 
         user_id = usernameinsystem.id
         membertorank = await group.get_member_by_id(user_id)
         await membertorank.promote()
         return {"message": f"User '{user_name}' was promoted!"}
 
-    except HTTPException:
-        raise  # re-raise known HTTP errors
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Promotion failed: {e.__class__.__name__}: {str(e)}")
-
+        return {"error": f"Promotion failed: {e}"}
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
     if key == APIKEY:
