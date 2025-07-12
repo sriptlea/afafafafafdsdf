@@ -32,11 +32,10 @@ async def promote_user(user_name: str, key: str, groupid: int):
         try:
             usernameinsystem = await client.get_user_by_username(user_name)
         except Exception as e:
-            # Check if error message indicates user does not exist
-            if "UserDoesNotExist" in str(e) or "does not exist" in str(e).lower():
+            error_str = str(e).lower()
+            if "userdoesnotexist" in error_str or "does not exist" in error_str:
                 return {"error": f"User '{user_name}' does not exist."}
-            else:
-                raise e
+            raise e
 
         user_id = usernameinsystem.id
         membertorank = await group.get_member_by_id(user_id)
