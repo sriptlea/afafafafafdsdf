@@ -84,4 +84,4 @@ async def read_items(user_name: str, key: str, groupid: int):
      return ("The user was demoted!")
     else:
         return "Incorrect key"
-uvicorn.run(app, host="0.0.0.0", port="8080")
+uvicorn.run(app, host="0.0.0.0", port=8080)
