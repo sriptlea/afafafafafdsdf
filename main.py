@@ -24,8 +24,6 @@ from fastapi import HTTPException
 
 import traceback
 
-import traceback
-
 @app.get("/group/promote/")
 async def promote_user(user_name: str, key: str, groupid: int):
     if key != APIKEY:
