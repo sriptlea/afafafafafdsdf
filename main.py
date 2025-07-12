@@ -24,6 +24,8 @@ from fastapi import HTTPException
 
 import traceback
 
+import traceback
+
 @app.get("/group/promote/")
 async def promote_user(user_name: str, key: str, groupid: int):
     if key != APIKEY:
@@ -32,27 +34,25 @@ async def promote_user(user_name: str, key: str, groupid: int):
     print(f"Promote request for user: '{user_name}', group: {groupid}")
 
     try:
-        group = await client.get_group(groupid)
-
-        try:
-            usernameinsystem = await client.get_user_by_username(user_name)
-            print(f"Found user id: {usernameinsystem.id} for username: {user_name}")
-        except Exception as e:
-            error_str = str(e)
-            print(f"Error looking up user: {error_str}")
-            if "userdoesnotexist" in error_str.lower() or "does not exist" in error_str.lower():
-                return {"error": f"User '{user_name}' does not exist."}
-            return {"error": f"User lookup failed: {error_str}"}
-
-        membertorank = await group.get_member_by_id(usernameinsystem.id)
-        await membertorank.promote()
-        print(f"Successfully promoted user {user_name}")
-        return {"message": f"User '{user_name}' was promoted!"}
-
+        usernameinsystem = await client.get_user_by_username(user_name)
+        if usernameinsystem is None:
+            return {"error": "User lookup failed: user not found"}
     except Exception as e:
-        tb = traceback.format_exc()
-        print(f"Full exception traceback:\n{tb}")
-        return {"error": f"Promotion failed: {str(e) if str(e) else 'Unknown error'}"}
+        err_text = ''.join(traceback.format_exception_only(type(e), e)).strip()
+        print(f"Error looking up user: {repr(err_text)}")
+        return {"error": f"User lookup failed: {err_text}"}
+
+    try:
+        group = await client.get_group(groupid)
+        user_id = usernameinsystem.id
+        membertorank = await group.get_member_by_id(user_id)
+        await membertorank.promote()
+        return {"message": "The user was promoted!"}
+    except Exception as e:
+        err_text = ''.join(traceback.format_exception_only(type(e), e)).strip()
+        print(f"Promotion failed: {repr(err_text)}")
+        return {"error": f"Promotion failed: {err_text}"}
+
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
     if key == APIKEY:
