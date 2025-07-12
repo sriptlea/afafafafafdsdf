@@ -19,7 +19,7 @@ async def root():
     return {"message": "Hello World"}
 from fastapi import HTTPException
 
-import traceback
+from ro_py.errors import UserDoesNotExistError
 from fastapi import HTTPException
 
 @app.get("/group/promote/")
@@ -29,15 +29,22 @@ async def promote_user(user_name: str, key: str, groupid: int):
 
     try:
         group = await client.get_group(groupid)
-        usernameinsystem = await client.get_user_by_username(user_name)
+        try:
+            usernameinsystem = await client.get_user_by_username(user_name)
+        except UserDoesNotExistError:
+            raise HTTPException(status_code=404, detail=f"User '{user_name}' does not exist.")
+
         user_id = usernameinsystem.id
         membertorank = await group.get_member_by_id(user_id)
         await membertorank.promote()
-        return {"message": "The user was promoted!"}
+        return {"message": f"User '{user_name}' was promoted!"}
+
+    except HTTPException:
+        raise  # re-raise known HTTP errors
+
     except Exception as e:
-        tb_str = traceback.format_exc()
-        print(f"Promotion error:\n{tb_str}")  # Logs full traceback to console/log
         raise HTTPException(status_code=500, detail=f"Promotion failed: {e.__class__.__name__}: {str(e)}")
+
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
     if key == APIKEY:
