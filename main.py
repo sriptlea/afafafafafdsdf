@@ -22,6 +22,8 @@ from fastapi import HTTPException
 
 from fastapi import HTTPException
 
+import traceback
+
 @app.get("/group/promote/")
 async def promote_user(user_name: str, key: str, groupid: int):
     if key != APIKEY:
@@ -32,10 +34,10 @@ async def promote_user(user_name: str, key: str, groupid: int):
         try:
             usernameinsystem = await client.get_user_by_username(user_name)
         except Exception as e:
-            error_str = str(e).lower()
-            if "userdoesnotexist" in error_str or "does not exist" in error_str:
+            error_str = str(e)
+            if "userdoesnotexist" in error_str.lower() or "does not exist" in error_str.lower():
                 return {"error": f"User '{user_name}' does not exist."}
-            raise e
+            return {"error": f"User lookup failed: {error_str}"}
 
         user_id = usernameinsystem.id
         membertorank = await group.get_member_by_id(user_id)
@@ -43,7 +45,10 @@ async def promote_user(user_name: str, key: str, groupid: int):
         return {"message": f"User '{user_name}' was promoted!"}
 
     except Exception as e:
-        return {"error": f"Promotion failed: {e}"}
+        tb = traceback.format_exc()
+        print(f"Full exception traceback:\n{tb}")  # Logs to your server console
+        return {"error": f"Promotion failed: {str(e) if str(e) else 'Unknown error'}"}
+
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
     if key == APIKEY:
