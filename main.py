@@ -17,17 +17,22 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+from fastapi import HTTPException
+
 @app.get("/group/promote/")
-async def read_items(user_name: str, key: str,groupid: int):
-    if key == APIKEY:
-     group = await client.get_group(groupid)
-     usernameinsystem = await client.get_user_by_username(user_name)
-     user_id = usernameinsystem.id
-     membertorank =  await group.get_member_by_id(user_id)
-     await membertorank.promote()
-     return ("The user was promoted!")
-    else:
-        return "Incorrect key"
+async def promote_user(user_name: str, key: str, groupid: int):
+    if key != APIKEY:
+        raise HTTPException(status_code=401, detail="Incorrect key")
+
+    try:
+        group = await client.get_group(groupid)
+        usernameinsystem = await client.get_user_by_username(user_name)
+        user_id = usernameinsystem.id
+        membertorank = await group.get_member_by_id(user_id)
+        await membertorank.promote()
+        return {"message": "The user was promoted!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Promotion failed: {e}")
 @app.get("/group/demote/")
 async def read_items(user_name: str, key: str, groupid: int):
     if key == APIKEY:
