@@ -1,0 +1,12 @@
+-- wave demo
+function greet(name)
+  print("Hello, " .. name .. "!")
+end
+
+greet("Wave Executor User")
+
+function printlog(logtext)
+  print("Wave Exectuor says: ", logtext)
+end
+
+printlog("Wave script is loaded!")
